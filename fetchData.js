@@ -1,23 +1,76 @@
-const axios = require('axios');
-const WebSocket = require('ws')
+const axios = require("axios");
+const WebSocket = require("ws");
+const fs = require("fs");
+const url = require("url");
 
-axios.get('https://livetiming.formula1.com/signalr/negotiate', {
-	params: {
-		connectionData: '[{\"name\":\"Streaming\"}]',
-        clientProtocol: '1.5'
-	}
-})
-.then(function (response) {
-    console.log(response.headers['set-cookie'])
-    const ws = new WebSocket('wss://livetiming.formula1.com/signalr/connect?transport=webSockets&connectionData=[{\"name\":\"Streaming\"}]&connectionToken='+ response.data.ConnectionToken + '&clientProtocol={"1.5"}', [], {
-        'headers': {
-            'Cookie': response.headers['set-cookie']
-        }
+const FORMULA_1_NEGOTIATE_PATH =
+  "https://livetiming.formula1.com/signalr/negotiate";
+const FORMULA_1_CONNECT_PATH = "wss://livetiming.formula1.com/signalr/connect";
+const FORMULA_1_CONNECTION_DATA = '[{"name":"Streaming"}]';
+const FORMULA_1_SUBSCRIPTIONS = `{"H":"Streaming","M":"Subscribe","A":[["SPFeed","TimingStats","SessionInfo","SessionData","DriverList","LapCount","TimingData", "TimingAppData"]],"I":1}`;
+
+let iteration = 0;
+const folderName = "RaceData";
+
+try {
+  if (!fs.existsSync(folderName)) {
+    fs.mkdirSync(folderName);
+  }
+} catch (err) {
+  console.error(err);
+}
+
+axios
+  .get(FORMULA_1_NEGOTIATE_PATH, {
+    params: {
+      connectionData: '[{"name":"Streaming"}]',
+      clientProtocol: "1.5",
+    },
+  })
+  .then(function (negotiateData) {
+    const queryParams = new url.URLSearchParams({
+      transport: "webSockets",
+      connectionData: FORMULA_1_CONNECTION_DATA,
+      connectionToken: negotiateData.data.ConnectionToken,
+      clientProtocol: "1.5",
     });
 
-    ws.on('error', console.error);
+    const connectUrl = FORMULA_1_CONNECT_PATH + "?" + queryParams.toString();
 
-    ws.on('open', function open() {
-        console.log("ws open")
+    const headers = {
+      Cookie: negotiateData.headers["set-cookie"],
+    };
+
+    const ws = new WebSocket(connectUrl, {
+      headers: headers,
     });
-})
+
+    function sendMessage() {
+      ws.send(FORMULA_1_SUBSCRIPTIONS);
+      iteration = iteration + 1;
+    }
+
+    ws.on("open", () => {
+      console.log("Connected to the server");
+      setInterval(() => sendMessage(), 1000);
+    });
+
+    ws.on("error", (err) => {
+      console.error("Failed to connect:", err);
+    });
+
+    ws.on("message", (message) => {
+      let decodedMessage = Buffer.from(message, "base64").toString("ascii");
+      if (decodedMessage != "{}") {
+        fs.writeFile(
+          "./" + folderName + "/" + iteration + ".json",
+          JSON.stringify(decodedMessage),
+          (err) => {
+            if (err) {
+              console.error(err);
+            }
+          }
+        );
+      }
+    });
+  });
