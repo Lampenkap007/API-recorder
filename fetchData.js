@@ -10,11 +10,11 @@ const FORMULA_1_CONNECTION_DATA = '[{"name":"Streaming"}]';
 const FORMULA_1_SUBSCRIPTIONS = `{"H":"Streaming","M":"Subscribe","A":[["SPFeed","TimingStats","SessionInfo","SessionData","DriverList","LapCount","TimingData", "TimingAppData"]],"I":1}`;
 
 let iteration = 0;
-const folderName = "RaceData";
+const folderName = "Trololo";
 
 try {
-  if (!fs.existsSync(folderName)) {
-    fs.mkdirSync(folderName);
+  if (!fs.existsSync("./savedData/" + folderName)) {
+    fs.mkdirSync("./savedData/" + folderName);
   }
 } catch (err) {
   console.error(err);
@@ -47,12 +47,12 @@ axios
 
     function sendMessage() {
       ws.send(FORMULA_1_SUBSCRIPTIONS);
-      iteration = iteration + 1;
     }
 
     ws.on("open", () => {
       console.log("Connected to the server");
-      setInterval(() => sendMessage(), 1000);
+      // setInterval(() => sendMessage(), 1000);
+      sendMessage();
     });
 
     ws.on("error", (err) => {
@@ -62,8 +62,10 @@ axios
     ws.on("message", (message) => {
       let decodedMessage = Buffer.from(message, "base64").toString("ascii");
       if (decodedMessage != "{}") {
+        iteration = iteration + 1;
+        console.log("./savedData/" + folderName + "/" + iteration + ".json");
         fs.writeFile(
-          "./" + folderName + "/" + iteration + ".json",
+          "./savedData/" + folderName + "/" + iteration + ".json",
           JSON.stringify(decodedMessage),
           (err) => {
             if (err) {
