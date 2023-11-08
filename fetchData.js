@@ -7,7 +7,7 @@ const FORMULA_1_NEGOTIATE_PATH =
   "https://livetiming.formula1.com/signalr/negotiate";
 const FORMULA_1_CONNECT_PATH = "wss://livetiming.formula1.com/signalr/connect";
 const FORMULA_1_CONNECTION_DATA = '[{"name":"Streaming"}]';
-const FORMULA_1_SUBSCRIPTIONS = `{"H":"Streaming","M":"Subscribe","A":[["SPFeed","TimingStats","SessionInfo","SessionData","DriverList","LapCount","TimingData", "TimingAppData"]],"I":1}`;
+const FORMULA_1_SUBSCRIPTIONS = `{"H":"Streaming","M":"Subscribe","A":[["SPFeed","TimingStats","SessionInfo","SessionData","DriverList","LapCount","TimingData", "TimingAppData","Position.z"]],"I":1}`;
 
 let iteration = 0;
 const folderName = "Trololo";
