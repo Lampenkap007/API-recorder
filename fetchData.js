@@ -7,10 +7,10 @@ const FORMULA_1_NEGOTIATE_PATH =
   "https://livetiming.formula1.com/signalr/negotiate";
 const FORMULA_1_CONNECT_PATH = "wss://livetiming.formula1.com/signalr/connect";
 const FORMULA_1_CONNECTION_DATA = '[{"name":"Streaming"}]';
-const FORMULA_1_SUBSCRIPTIONS = `{"H":"Streaming","M":"Subscribe","A":[["SPFeed","TimingStats","SessionInfo","SessionData","DriverList","LapCount","TimingData", "TimingAppData","Position.z"]],"I":1}`;
+const FORMULA_1_SUBSCRIPTIONS = `{"H":"Streaming","M":"Subscribe","A":[["Position.z"]],"I":1}`;
 
 let iteration = 0;
-const folderName = "Trololo";
+const folderName = "Data";
 
 try {
   if (!fs.existsSync("./savedData/" + folderName)) {
@@ -51,8 +51,7 @@ axios
 
     ws.on("open", () => {
       console.log("Connected to the server");
-      // setInterval(() => sendMessage(), 1000);
-      sendMessage();
+      setInterval(() => sendMessage(), 1000);
     });
 
     ws.on("error", (err) => {
@@ -61,12 +60,12 @@ axios
 
     ws.on("message", (message) => {
       let decodedMessage = Buffer.from(message, "base64").toString("ascii");
-      if (decodedMessage != "{}") {
+      if (decodedMessage.startsWith('{"R"')) {
         iteration = iteration + 1;
         console.log("./savedData/" + folderName + "/" + iteration + ".json");
         fs.writeFile(
           "./savedData/" + folderName + "/" + iteration + ".json",
-          JSON.stringify(decodedMessage),
+          decodedMessage,
           (err) => {
             if (err) {
               console.error(err);
